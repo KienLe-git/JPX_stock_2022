@@ -1,5 +1,5 @@
 Folder source code gồm 2 folder chính:
-+ input: gồm data, bao gồm: 
++ __input__: gồm data, bao gồm: 
   + data gốc của bài toán: "jpx-tokyo-stock-exchange-prediction"
   + data sau Data Preprocessing: "1_after_datapreprocessing"
   + data sau Feature Engineering: "2_after_featureEngineering"
