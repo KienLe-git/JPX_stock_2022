@@ -1,3 +1,6 @@
+# input file
+__input__
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
