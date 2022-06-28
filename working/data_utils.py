@@ -76,7 +76,7 @@ def DataPreprocessing_for_official_test(_df: pd.DataFrame, df_train: pd.DataFram
 
     return df_return
 
-def FeatureEgineering_for_official_test(_df: pd.DataFrame, df_train: pd.DataFrame, N: int = 3):
+def FeatureEngineering_for_official_test(_df: pd.DataFrame, df_train: pd.DataFrame, N: int = 3):
     df = _df.copy()
     df['Range_HL'] = df['High'] - df['Low']
     df['Range_OC'] = df['Open'] - df['Close']
