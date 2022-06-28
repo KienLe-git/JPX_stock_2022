@@ -1,5 +1,7 @@
 # __input__ file
-__input__
+__input__/*/*.csv
+__input__/*/*/*.csv
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
