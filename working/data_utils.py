@@ -3,32 +3,24 @@ from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
 
-def render_predict(data: pd.DataFrame, y_true: pd.DataFrame, y_pred: pd.DataFrame):
-    data = data.sort_values(by= ['Date'], ascending = True)
-    y_true = y_true.sort_values(by= ['Date'], ascending = True)
-    y_pred = y_pred.sort_values(by= ['Date'], ascending = True)
-
-    plt.plot(data['Date'][-500:], data['Close'][-500:], color = "blue", label="data")
-    plt.plot(y_true['Date'], y_true['Close'], color = "green", label = "true")
-    plt.plot(y_pred['Date'], y_pred['Close'], color = "red", label = "pred")
-    plt.legend()
-    plt.show()
-
-def render_col(df: pd.DataFrame, code: int, col_name: List[str], num_days: int = None):
+def render_col(df: pd.DataFrame, code: int, col_name: str, num_days: int = None):
     if num_days is None:
         num_days = len(df)
-    sample = df[df['SecuritiesCode'] == code]
-    for col in col_name:
-        plt.plot(
-            sample['Date'][-num_days :], 
-            sample[col_name][-num_days :],
-            # label= col
-        )
 
-    plt.legend(col_name)
-    plt.xlabel("Date")
-    plt.ylabel(col_name)
-    plt.title('SecuritiesCode: ' + str(code))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    sample = df[df['SecuritiesCode'] == code]
+    ax.plot(
+        sample['Date'][-num_days :], 
+        sample[col_name][-num_days :],
+    )
+
+    ax.legend(col_name)
+    ax.set_xlabel("Date")
+    ax.set_title('SecuritiesCode: ' + str(code))
+    ax.set_xticks([sample['Date'].iloc[0], sample['Date'].iloc[-1]])
+
     plt.show()
     print(len(sample))
 
@@ -42,41 +34,35 @@ def render_feature_important(model_xgboost, df_trained):
   data = pd.DataFrame(data=values, index=keys, columns=["score"]).sort_values(by = "score", ascending=True)
   data.plot(kind='barh', figsize = (20,10))
 
-def fillInterpolate(_df: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
+def fillInterpolate(_df: pd.DataFrame, cols: List[str], limit_direction='both', **kwargs) -> pd.DataFrame:
     assert all([x in _df.columns for x in cols])
     
     df = _df.copy()
     df = df.set_index(['Date'])
-    df[cols] = df[cols].interpolate('time', limit_direction='both')
+    df[cols] = df[cols].interpolate('time', limit_direction= limit_direction, **kwargs)
     return df.reset_index()
 
 
-
-
-def DataPreprocessing_for_official_test(_df: pd.DataFrame, df_train: pd.DataFrame):
+def DataPreprocessing_for_HiddenTest(_df: pd.DataFrame, df_base: pd.DataFrame):
     df = _df.copy()
-    df['Date'] = pd.to_datetime(df['Date'])
 
-    df_return = df[['Date', 'SecuritiesCode', 'Volume', 'AdjustmentFactor', 'ExpectedDividend', 'SupervisionFlag']]
-    df_return['ExpectedDividend'] = df_return['ExpectedDividend'].fillna(-1)
+    last_base_date = df_base['Date'].max()
 
-    sorted_tmp = pd.DataFrame()
-    for code in df['SecuritiesCode'].unique():
-        df_tmp = df_train[['SecuritiesCode', 'Date', 'Open', 'High', 'Low', 'Close']][df_train['SecuritiesCode'] == code].sort_values(by=['Date'], ascending= True).iloc[-15:].append(
-            df[['SecuritiesCode', 'Date', 'Open', 'High', 'Low', 'Close']][df['SecuritiesCode'] == code])
-        df_tmp = df_tmp.sort_values(by=['Date'], ascending= True)
-        df_tmp = fillInterpolate(df_tmp, ['Open', 'High', 'Low', 'Close'])
-    
-        sorted_tmp = sorted_tmp.append(df_tmp)
+    df = df.append(df_base, ignore_index= True)
+    df['ExpectedDividend'].fillna(-1, inplace= True)
 
-    df_return = df_return.merge(
-        sorted_tmp,
-        how='left', on=['SecuritiesCode', 'Date']
-    )
+    sorted_tmp = df.reset_index().groupby(by=['SecuritiesCode']).apply(
+        lambda df_code: fillInterpolate(df_code[
+            ['index', 'Date', 'Open', 'High', 'Low', 'Close']
+        ], ['Open', 'High', 'Low', 'Close'], limit_direction= 'both')
+    ).reset_index(drop= True).set_index('index')[['Open', 'High', 'Low', 'Close']]
 
-    return df_return
+    df[['Open', 'High', 'Low', 'Close']] = sorted_tmp[['Open', 'High', 'Low', 'Close']]
 
-def FeatureEngineering_for_official_test(_df: pd.DataFrame, df_train: pd.DataFrame, N: int = 3):
+    return df[df['Date'] > last_base_date].reset_index(drop= True).drop(['Target', 'CloseT1', 'CloseT2', 'RowId'], axis = 1)
+
+
+def FeatureEngineering_for_HiddenTest(_df: pd.DataFrame, df_train: pd.DataFrame, N: int = 3):
     df = _df.copy()
     df['Range_HL'] = df['High'] - df['Low']
     df['Range_OC'] = df['Open'] - df['Close']
@@ -145,3 +131,13 @@ def FeatureEngineering_for_official_test(_df: pd.DataFrame, df_train: pd.DataFra
     
     return df
 
+def render_predict(data: pd.DataFrame, y_true: pd.DataFrame, y_pred: pd.DataFrame):
+    data = data.sort_values(by= ['Date'], ascending = True)
+    y_true = y_true.sort_values(by= ['Date'], ascending = True)
+    y_pred = y_pred.sort_values(by= ['Date'], ascending = True)
+
+    plt.plot(data['Date'][-500:], data['Close'][-500:], color = "blue", label="data")
+    plt.plot(y_true['Date'], y_true['Close'], color = "green", label = "true")
+    plt.plot(y_pred['Date'], y_pred['Close'], color = "red", label = "pred")
+    plt.legend()
+    plt.show()

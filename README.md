@@ -1,7 +1,7 @@
 Folder source code gồm 2 folder chính:
 + __input__: gồm data, bao gồm: 
   + data gốc của bài toán: "jpx-tokyo-stock-exchange-prediction"
-  + data sau Data Preprocessing: "1_after_datapreprocessing"
+  + data sau Data Preprocessing: "1_DataPreprocessing"
   + data sau Feature Engineering: "2_after_featureEngineering"
   + data sau Feature Selection: "3_ after_feature_selection"
 + working: Gồm các file *.ipynb - file chạy code; data_utils.py - chứa các hàm cơ bản; *.csv - các kết quả lưu ra. Trong đó, với file .ipynb:
