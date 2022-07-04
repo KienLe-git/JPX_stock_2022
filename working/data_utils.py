@@ -3,6 +3,16 @@ from typing import List
 import matplotlib.pyplot as plt
 import numpy as np
 
+def train_valid_test_split(df: pd.DataFrame):
+    df_train = df[df['Date'] <= '2021-05-27'].reset_index(drop= True)
+
+    df_valid = df[
+        (df['Date'] > '2021-05-27') & (df['Date'] <= '2021-12-03')
+    ].reset_index(drop= True)
+    
+    df_test = df[df['Date'] >= '2021-12-06'].reset_index(drop= True)
+    return df_train, df_valid, df_test
+
 def render_col(df: pd.DataFrame, code: int, col_name: str, num_days: int = None):
     if num_days is None:
         num_days = len(df)
