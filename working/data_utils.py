@@ -151,3 +151,47 @@ def render_predict(data: pd.DataFrame, y_true: pd.DataFrame, y_pred: pd.DataFram
     plt.plot(y_pred['Date'], y_pred['Close'], color = "red", label = "pred")
     plt.legend()
     plt.show()
+
+def calc_spread_return_per_day(df, portfolio_size: int = 200, toprank_weight_ratio: float = 2):
+    """
+    Args:
+        df (pd.DataFrame): predicted results
+        portfolio_size (int): # of equities to buy/sell
+        toprank_weight_ratio (float): the relative weight of the most highly ranked stock compared to the least.
+    Returns:
+        (float): spread return
+    """
+    assert df['Rank'].min() == 0
+    assert df['Rank'].max() == len(df['Rank']) - 1
+    weights = np.linspace(start=toprank_weight_ratio, stop=1, num=portfolio_size)
+    purchase = (df.sort_values(by='Rank')['Target'][:portfolio_size] * weights).sum() / weights.mean()
+    short = (df.sort_values(by='Rank', ascending=False)['Target'][:portfolio_size] * weights).sum() / weights.mean()
+    return purchase - short
+
+def calc_spread_return_sharpe(df: pd.DataFrame, portfolio_size: int = 200, toprank_weight_ratio: float = 2) -> float:
+    """
+    Args:
+        df (pd.DataFrame): predicted results
+        portfolio_size (int): # of equities to buy/sell
+        toprank_weight_ratio (float): the relative weight of the most highly ranked stock compared to the least.
+    Returns:
+        (float): sharpe ratio
+    """
+    buf = df.groupby('Date').apply(calc_spread_return_per_day, portfolio_size, toprank_weight_ratio)
+    sharpe_ratio = buf.mean() / buf.std()
+    return sharpe_ratio, buf
+
+def add_rank(df: pd.DataFrame, y_pred):
+    df["Pred"] = y_pred
+    df["Rank"] = df.groupby("Date")["Pred"].rank(ascending=False, method="first") - 1 
+    df = df.drop("Pred", axis= 1)
+    return df
+
+def calc_score(df: pd.DataFrame, y_pred: pd.DataFrame, y_true: pd.DataFrame, render_info= True):
+    feature_df = df.copy()
+    feature_df = add_rank(feature_df, y_pred)
+    feature_df['Target'] = y_true
+    score, buf = calc_spread_return_sharpe(feature_df)
+    if render_info:
+        print(f'score -> {score}\nmean -> {buf.mean()}\nstd -> {buf.std()}')
+    return score
