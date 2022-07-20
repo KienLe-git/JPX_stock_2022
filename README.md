@@ -7,9 +7,11 @@
 + Optuna
 # Requirements
 + Install basic libraries used:
-> ! pip install pandas\
-> ! pip install numpy \
-> ! pip install optuna
+```bash
+! pip install pandas
+! pip install numpy
+! pip install optuna
+```
 + Sử dụng Python version 3.9++.
 # Usage
 + Run file ipynb in folder __working__ theo thứ tự lần lượt
